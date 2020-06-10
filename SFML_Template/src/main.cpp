@@ -95,19 +95,16 @@ public:
 };
 
 
-//--------------- Game Objects --------------------------
+//--------------- Game Constants --------------------------
 
-int windowWidth = 1024;
-int windowHeight = 688;
-int halfWinHeight = windowHeight / 2;
-int halfWinWidth = windowWidth / 2;
-/*
-3 18 -> 9 42
-24 34 -> 45 42
-50 31 -> 63 42
-14 24 -> 20 24
-*/
-PlatformClass platforms[3]{
+const int windowWidth = 1024;
+const int windowHeight = 688;
+const int halfWinHeight = windowHeight / 2;
+const int halfWinWidth = windowWidth / 2;
+
+//--------------- Game objects --------------------------
+
+PlatformClass platforms[3]{ // The platform array
 	PlatformClass(48, 288, 96, 384),
 	PlatformClass(384, 544, 336, 128),
 	PlatformClass(800, 496, 208, 176)
@@ -251,13 +248,16 @@ int main() { //<! Entry point for the application
 	RenderWindow window(VideoMode(windowWidth, windowHeight), "2D Platformer");
 	window.setFramerateLimit(60);
 
-	bool up = false, left = false, right = false;
-	bool end = false;
-	bool dead = false;
+	bool up = false, left = false, right = false; // To keep track of the pressed keys
+	// game state variables
+	bool end = false; //end : if we are displaying an end message
+	bool dead = false; // if the player is dead
 
-	bool menu = true;
+	bool menu = true; // If we are on menu state 
 
-	Clock clock;
+	Clock clock; // to keep track of the time
+
+	// ---------------------------------------------- Text objects -------------------------
 
 	Font conolasFont;
 	conolasFont.loadFromFile("src/comic.ttf");
@@ -266,7 +266,7 @@ int main() { //<! Entry point for the application
 	winText.setPosition(halfWinWidth - winText.getGlobalBounds().width / 2, halfWinHeight - winText.getGlobalBounds().height / 2);
 	winText.setFillColor(Color(0, 0, 0));
 
-	Text endText("       You ded \n Press any key to restart ...", conolasFont, 50);
+	Text endText("      You ded \n Press any key to restart ...", conolasFont, 50);
 	endText.setPosition(halfWinWidth - endText.getGlobalBounds().width / 2, halfWinHeight - endText.getGlobalBounds().height / 2);
 	endText.setFillColor(Color(0, 0, 0));
 
@@ -278,10 +278,11 @@ int main() { //<! Entry point for the application
 	playText.setFillColor(Color(0, 0, 200));
 	quitText.setFillColor(Color(0, 0, 200));
 
-	menuText.setPosition(halfWinWidth - menuText.getGlobalBounds().width / 2, 150);
+	menuText.setPosition(halfWinWidth - menuText.getGlobalBounds().width / 2, 150); // set the text positions at the center of the screen
 	playText.setPosition(halfWinWidth - playText.getGlobalBounds().width / 2, 300);
 	quitText.setPosition(halfWinWidth - quitText.getGlobalBounds().width / 2, 450);
 
+	//-------------- Game objects settings ------------------
 
 	Texture playerTexture1;
 	playerTexture1.loadFromFile("src/snail.png");
@@ -304,7 +305,7 @@ int main() { //<! Entry point for the application
 
 	while (window.isOpen()) {
 		Event event;
-		while (window.pollEvent(event)) {
+		while (window.pollEvent(event)) { // Event management
 			if (event.type == Event::Closed) {
 				window.close();
 			}
@@ -314,8 +315,8 @@ int main() { //<! Entry point for the application
 				coin.collected = false;
 			}
 			if (event.type == Event::MouseButtonPressed) {
-				Vector2f mouse = Vector2f(float(Mouse::getPosition(window).x), float(Mouse::getPosition(window).y));
-				if (playText.getGlobalBounds().contains(mouse)) menu = false;
+				Vector2f mouse = Vector2f(float(Mouse::getPosition(window).x), float(Mouse::getPosition(window).y)); // Mouse coordinates
+				if (playText.getGlobalBounds().contains(mouse)) menu = false; // test for collisions between the mouse and the texts bounding boxes
 				else if (quitText.getGlobalBounds().contains(mouse)) {
 					cout << "Goodbye !" << endl;
 					exit(0);
@@ -330,9 +331,10 @@ int main() { //<! Entry point for the application
 		right = Keyboard::isKeyPressed(Keyboard::Right);
 		left = Keyboard::isKeyPressed(Keyboard::Left);
 		up = Keyboard::isKeyPressed(Keyboard::Up);
+
 		if (!end) {
 			dead = false;
-			end = playerObject.update(up && !menu, left && !menu, right && !menu); // to disable the player movement
+			end = playerObject.update(up && !menu, left && !menu, right && !menu); // to disable the player movement if in menu state
 			if (playerObject.ypos > windowHeight) {
 				end = true;
 				dead = true;
@@ -344,22 +346,38 @@ int main() { //<! Entry point for the application
 		}
 
 		window.clear();
+
 		window.draw(background);
 		window.draw(level);
 
 		window.draw(playerObject.image);
+
 		window.draw(exitShape);
+
 		if (!coin.collected) coin.drawToScreen(window);
-		npc.drawToScreen(window, end ? 0 : deltaTime);
+
+		npc.drawToScreen(window, end ? 0 : deltaTime); // ternary operator to move the objects only if we are not in end state
 		mp.drawToScreen(window, end ? 0 : deltaTime);
-		if (end) {
+
+		if (end) { // drawing the correct messages at the end;
 			if (dead)
 				window.draw(endText);
 			else
 				window.draw(winText);
 		}
 
-		if (menu) {
+		//Making the buttons react to mouse hovering
+
+		Vector2f mouse = Vector2f(float(Mouse::getPosition(window).x), float(Mouse::getPosition(window).y)); // Mouse coordinates
+		float mscale = menuText.getGlobalBounds().contains(mouse) ? 1.4f : 1.0f;
+		float pscale = playText.getGlobalBounds().contains(mouse) ? 1.4f : 1.0f;
+		float qscale = quitText.getGlobalBounds().contains(mouse) ? 1.4f : 1.0f;
+
+		menuText.setScale(mscale, mscale);
+		playText.setScale(pscale, pscale);
+		quitText.setScale(qscale, qscale);
+
+		if (menu) {// drawing menu text
 			window.draw(menuText);
 			window.draw(playText);
 			window.draw(quitText);
